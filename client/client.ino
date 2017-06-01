@@ -19,6 +19,7 @@
 #include "Adafruit_MQTT.h"
 #include "Adafruit_MQTT_Client.h"
 #include <EEPROM.h>
+#include <ArduinoJson.h>
 
 /************************* WiFi Access Point *********************************/
 
@@ -44,6 +45,7 @@ int button=0;
 const char *ssid = "SensorMovimiento";
 const char *password = "12345678";
 WiFiServer  server(8889);
+StaticJsonBuffer<200> jsonBuffer;
 
 
 String rx;
@@ -82,6 +84,7 @@ Adafruit_MQTT_Publish fx = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "test");
 //Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/rele");
 Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/TRA000001X/rele");
 
+
 /*************************** Sketch Code ************************************/
 
 // Bug workaround for Arduino 1.6.6, it seems to need a function declaration
@@ -114,6 +117,9 @@ boolean readRelay(){
   }
 }
 
+JsonObject& root = jsonBuffer.createObject();
+long sequence=0;
+
 void setup() {
   Serial.begin(115200);
   delay(10);
@@ -128,159 +134,6 @@ void setup() {
   Serial.println("Designed by Ing.Nelson Rodriguez");
   readEeprom();
   conectar();
-//conectar:
-//  readssid();
-//  readpass();
-//
-//  // Connect to WiFi access point.
-//  Serial.println(); Serial.println();
-//  Serial.print("Connecting to ");
-//  Serial.println(WLAN_SSID);
-//  Serial.print("Passwd:");
-//  Serial.println(WLAN_PASS);
-//
-//  Serial.println("Configure module WIFI_STA");
-//  WiFi.mode(WIFI_STA);
-//  WiFi.begin(WLAN_SSID, WLAN_PASS);
-//  int timeoutButton=0;
-//  while (WiFi.status() != WL_CONNECTED) {
-//    //
-//    delay(100);
-//    Serial.println(".");
-//    digitalWrite(greenLed,!digitalRead(greenLed));
-//    if (!digitalRead(button)){
-//      WiFi.disconnect();
-//      ++timeoutButton;
-//      Serial.println(timeoutButton);
-//      if (timeoutButton>15){
-//        led(1);
-//        while(!digitalRead(button)){
-//          Serial.println("Esperando a que se suelte button");
-//          delay(500);
-//        }
-//        Serial.println("Entrando a modo programacion...");
-//        Serial.print("Configuring access point...");
-//        delay(3000);
-//        timeoutButton=0;     
-//        Serial.println("Configure module WIFI_AP");   
-//        WiFi.mode(WIFI_AP);
-//        WiFi.softAP(ssid, password);
-//        WiFi.printDiag(Serial);
-//        IPAddress myIP = WiFi.softAPIP();
-//        Serial.print("AP IP address: ");
-//        Serial.println(myIP);
-//        server.begin();
-//        printWifiStatus();   
-//        while(1){
-//          yield();
-//          if (client.status()==CLOSED){
-//            client.stop();
-//            if (++prescaler>100000){
-//              prescaler=0;
-//              Serial.print("\nConnection closed on client");  
-//              inputString="";
-//            }
-//            
-//            alreadyConnected = false;     
-//          }
-//          if (client) {
-//            if (!alreadyConnected) {
-//              // clead out the input buffer:
-//              client.flush();    
-//              Serial.println("We have a new client");
-//              client.println("im esp8266: "+serial); 
-//              alreadyConnected = true;
-//            } 
-//        
-//            if (client.available() > 0) {
-//              // read the bytes incoming from the client:
-//              char thisChar = client.read();
-//               
-//              if (thisChar!='\r'){
-//                inputString += thisChar; 
-//              }else {
-//                command=inputString;
-//                Serial.println("Comando recibido: "+command);
-//                
-//                if (command=="alive?"){
-//                  client.println("alive Ok");
-//                }
-//        
-//                if (command=="serial?"){
-//                  client.println(serial);  
-//                }
-//        
-//                if (command=="readeprom?"){
-//                  readEeprom();                  
-//                }
-//                if (command=="readessid?"){
-//                  readssid();                  
-//                }
-//                if (command=="readepass?"){
-//                  readpass();                  
-//                }
-//                if (command=="connect!"){
-//                  Serial.println("Reseting wifi module!!!");
-//                  WiFi.disconnect();
-//                  //ESP.reset();
-//                  //ESP.restart();
-//                  goto conectar;                  
-//                }
-//        
-//                Serial.print("command length: ");
-//                Serial.println(command.length());
-//                if (command.length()>4){
-//                  ssidSubStr=command.substring(0,4);
-//                  //Serial.println("ssidSubStr: "+ssidSubStr); 
-//                  if (ssidSubStr=="Ssid"){
-//                    str_ssid=command.substring(5,command.length());
-//                    Serial.println(str_ssid);
-//                    client.println(str_ssid);
-//                    saveSSID(str_ssid);
-//                  }
-//                  ssidSubStr="";
-//                  ssidSubStr=command.substring(0,4);
-//                  if (ssidSubStr=="Pass"){
-//                    str_passwd=command.substring(5,command.length());
-//                    Serial.println(str_passwd);
-//                    client.println(str_passwd);
-//                    savePASSWD(str_passwd);
-//                  }
-//                }
-//                client.flush();
-//                command="";inputString="";ssidSubStr="";
-//              }
-//              // echo the bytes back to the client:
-//              //client.print(thisChar);
-//              // echo the bytes to the server as well:
-//              //Serial.write(thisChar);
-//            }
-//          }else {
-//            client = server.available();
-//            if (client.status()==CLOSED){
-//              client.stop();
-//              //Serial.print("\nConnection closed on client: "  );
-//        
-//              //Serial.println();
-//              alreadyConnected = false;  
-//            }
-//          }
-//
-//
-//
-//          
-//          delay(50);
-//          if (!digitalRead(button)){
-//            Serial.println("Saliendo modo programacion");
-//            break;
-//          }
-//          
-//        }
-//      }
-//    }else {
-//      timeoutButton=0;
-//    }
-//  }
   Serial.println();
   relay(1);led(1);
 
@@ -300,6 +153,8 @@ void setup() {
   }else {
     Serial.println("ok Mqtt desconectado"); 
   }
+  
+  
 }
 
 uint32_t x=0;
@@ -312,6 +167,11 @@ void loop() {
 
   // this is our 'wait for incoming subscription packets' busy subloop
   // try to spend your time here
+
+  if (!digitalRead(button)){
+    Serial.println("Btn pressed");
+    conectar();
+  }
 
   Adafruit_MQTT_Subscribe *subscription;
   while ((subscription = mqtt.readSubscription(3000))) {
@@ -331,7 +191,21 @@ void loop() {
   //Serial.print(x);
   //Serial.print("...");
   //if (! photocell.publish(x++)) {
-  if (! photocell.publish(readRelay())) {
+  
+  String  jsonObj;
+  long rssi = WiFi.RSSI();
+  root["state"] = readRelay();
+  root["sequence"] = ++sequence;
+  root["rssi"] = rssi;
+  long quality=2 * (rssi + 100);
+  root["quality"] = quality;
+  
+  root.prettyPrintTo(jsonObj);
+  Serial.println(jsonObj);
+  //if (! photocell.publish(readRelay()+"hol")) {
+  char feed[100];
+  jsonObj.toCharArray(feed,jsonObj.length()+1);
+  if (! photocell.publish(feed)) {
     Serial.println(F("Failed"));
   } else {
     Serial.println(F("OK!"));
@@ -492,25 +366,59 @@ void readpass(){
 }
 
 void conectar(){
+  Serial.println("Funcion Conectar....");
   conectar:
   readssid();
   readpass();
 
-  // Connect to WiFi access point.
-  Serial.println(); Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(WLAN_SSID);
-  Serial.print("Passwd:");
-  Serial.println(WLAN_PASS);
+  Serial.print("WIFI STATUS: ");Serial.println(WiFi.status());
+  switch (WiFi.status()){
+    case 0:
+      Serial.println("WL_IDLE_STATUS");
+    break;
+    case 1:
+      Serial.println("WL_NO_SSID_AVAIL");
+    break;
+    case 2:
+      Serial.println("WL_SCAN_COMPLETED");
+    break;
+    case 3:
+      Serial.println("WL_CONNECTED");
+    break;
+    case 4:
+      Serial.println("WL_CONNECT_FAILED");
+    break;
+    case 5:
+      Serial.println("WL_CONNECTION_LOST");
+    break;
+    case 6:
+      Serial.println("WL_DISCONNECTED");
+    break;
+  }
 
-  Serial.println("Configure module WIFI_STA");
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WLAN_SSID, WLAN_PASS);
-  int timeoutButton=0;
+  if (WiFi.status()==WL_DISCONNECTED || WiFi.status()==WL_IDLE_STATUS){
+    // Connect to WiFi access point.
+    Serial.println(); Serial.println();
+    Serial.print("Connecting to ");
+    Serial.println(WLAN_SSID);
+    Serial.print("Passwd:");
+    Serial.println(WLAN_PASS); 
+  
+    Serial.println("Configure module WIFI_STA");
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(WLAN_SSID, WLAN_PASS);  
+  }
+
+  int timeoutButton=0;  
+  int pr=0;
   while (WiFi.status() != WL_CONNECTED) {
-    //
+    
     delay(100);
-    Serial.println(".");
+    if (++pr>5){
+      pr=0;
+      Serial.print(".");
+    }
+    
     digitalWrite(greenLed,!digitalRead(greenLed));
     if (!digitalRead(button)){
       WiFi.disconnect();
@@ -629,10 +537,6 @@ void conectar(){
               alreadyConnected = false;  
             }
           }
-
-
-
-          
           delay(50);
           if (!digitalRead(button)){
             Serial.println("Saliendo modo programacion");
@@ -645,6 +549,7 @@ void conectar(){
       timeoutButton=0;
     }
   }
+  Serial.println("Saliendo de conectar");
 }
 
 
