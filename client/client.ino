@@ -30,19 +30,19 @@
 
 #define AIO_SERVER      "138.197.20.62"
 #define AIO_SERVERPORT  1883                   // use 8883 for SSL
-#define AIO_USERNAME    ""
-#define AIO_KEY         ""
+#define AIO_USERNAME    "nelson"
+#define AIO_KEY         "!irfz44n"
 
 
 
 /************ Global State (you don't need to change this!) ******************/
 char WLAN_SSID[20]="NELSON";
 char WLAN_PASS[20]="nelson1234567";
-String ID="TRA000001X";
+String ID="TRA000002X";
 int rele=12;
 int greenLed=13;
 int button=0;
-const char *ssid = "SensorMovimiento";
+const char *ssid = "ControlLights";
 const char *password = "12345678";
 WiFiServer  server(8889);
 StaticJsonBuffer<200> jsonBuffer;
@@ -52,7 +52,7 @@ String rx;
 boolean alreadyConnected = false;
 //WiFiClient client;
 int prescaler=0;
-String serial="SM-32650001";
+//String serial="SM-32650001";
 String inputString = "";
 String command="";
 String str_ssid="";
@@ -72,7 +72,8 @@ Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO
 // Setup a feed called 'photocell' for publishing.
 // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
 //Adafruit_MQTT_Publish photocell = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/photocell");
-Adafruit_MQTT_Publish photocell = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "estado");
+//Adafruit_MQTT_Publish photocell = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/TRA000002X/estado");
+Adafruit_MQTT_Publish photocell = Adafruit_MQTT_Publish(&mqtt,"/TRA000002X/estado");
 Adafruit_MQTT_Publish fx = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "test");
 
 // Setup a feed called 'onoff' for subscribing to changes.
@@ -82,7 +83,7 @@ Adafruit_MQTT_Publish fx = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "test");
 //const char rele[] PROGMEM = AIO_USERNAME "/TRA000001X/rele";
 
 //Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/rele");
-Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/TRA000001X/rele");
+Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt,"/TRA000002X/rele");
 
 
 /*************************** Sketch Code ************************************/
@@ -179,9 +180,9 @@ void loop() {
       Serial.print(F("Got: "));
       Serial.println((char *)onoffbutton.lastread);
       if (strcmp((char *)onoffbutton.lastread, "1") == 0) {
-        relay(1);led(1); 
+        relay(1);led(1);break;
       }else if (strcmp((char *)onoffbutton.lastread, "0") == 0) {
-        relay(0);led(0); 
+        relay(0);led(0);break;
       }
     }
   }
@@ -194,11 +195,13 @@ void loop() {
   
   String  jsonObj;
   long rssi = WiFi.RSSI();
+  root["id"]=ID;
   root["state"] = readRelay();
   root["sequence"] = ++sequence;
   root["rssi"] = rssi;
   long quality=2 * (rssi + 100);
   root["quality"] = quality;
+  
   
   root.prettyPrintTo(jsonObj);
   Serial.println(jsonObj);
@@ -460,7 +463,7 @@ void conectar(){
               // clead out the input buffer:
               client.flush();    
               Serial.println("We have a new client");
-              client.println("im esp8266: "+serial); 
+              client.println("im controlLights: "+ID); 
               alreadyConnected = true;
             } 
         
@@ -479,7 +482,7 @@ void conectar(){
                 }
         
                 if (command=="serial?"){
-                  client.println(serial);  
+                  client.println(ID);  
                 }
         
                 if (command=="readeprom?"){
